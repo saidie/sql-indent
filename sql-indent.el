@@ -108,6 +108,11 @@ indented by `sql-indent-offset'."
 		)
 
       (forward-line -1))
+
+    (goto-char (point-at-bol))
+    (if (looking-at "^\\s-*))*")
+        (progn (message "age") (goto-char (match-end 0))))
+
     (list (point) (current-indentation))
     )
   )
@@ -119,32 +124,43 @@ the previous non-blank line.
 Return a list containing the level change and the previous indentation."
 
   (save-excursion
-    ;; Go back to the previous non-blank line
-    (let* ((p-line (cond ((and prev-start prev-indent)
-			  (list prev-start prev-indent))
-			 ((sql-indent-get-last-line-start))))
-	   (curr-start (point-at-bol))
-	   (paren (nth 0 (parse-partial-sexp (nth 0 p-line) curr-start))))
+    (goto-char (point-at-bol))
 
-      ;; Add opening or closing parens.
-      ;; If the current line starts with a keyword statement (e.g. SELECT, FROM, ...) back up one level
-      ;; If the previous line starts with a keyword statement then add one level
+    (cond ((looking-at "^\\s-*))*")
+           (goto-char (match-end 0))
+           (backward-sexp)
+           (list 0 (current-indentation)))
+          (t
+           ;; Go back to the previous non-blank line
+           (let* ((p-line (cond ((and prev-start prev-indent)
+                                 (list prev-start prev-indent))
+                                ((sql-indent-get-last-line-start))))
+                  (curr-start (point-at-bol))
+                  (paren (nth 0 (parse-partial-sexp (nth 0 p-line) curr-start))))
 
-      (list
-       (+ paren
-	  (if (progn (goto-char (nth 0 p-line))
-		     (looking-at sql-indent-first-column-regexp))
-	      1
-	    0)
-	  (if (progn (goto-char curr-start)
-		     (looking-at sql-indent-first-column-regexp))
-	      -1
-	    0)
-	  )
-       (nth 1 p-line))
-      )
-    )
-  )
+             ;; Add opening or closing parens.
+             ;; If the current line starts with a keyword statement (e.g. SELECT, FROM, ...) back up one level
+             ;; If the previous line starts with a keyword statement then add one level
+
+             (list
+              (+ paren
+                 (if (progn (goto-char (nth 0 p-line))
+                            (goto-char (point-at-bol))
+                            (looking-at "^\\s-*))*"))
+                     (if (progn (goto-char curr-start)
+                                (looking-at sql-indent-first-column-regexp))
+                         0
+                       1)
+                   (+
+                    (if (progn (goto-char (nth 0 p-line))
+                               (looking-at sql-indent-first-column-regexp))
+                        1
+                      0)
+                    (if (progn (goto-char curr-start)
+                               (looking-at sql-indent-first-column-regexp))
+                        -1
+                      0))))
+              (nth 1 p-line)))))))
 
 (defun sql-indent-buffer ()
   "Indent the buffer's SQL statements."
