@@ -66,7 +66,7 @@
   (concat "\\(^\\s-*" (regexp-opt '(
 				    "select" "update" "insert" "delete"
 				    "union" "intersect"
-				    "from" "where" "into" "group" "having" "order"
+				    "from" "where" "into" "group" "having" "order" "limit" "offset"
 				    "set"
 				    "create" "drop" "truncate"
 				    "--") t) "\\(\\b\\|\\s-\\)\\)\\|\\(^```$\\)")
